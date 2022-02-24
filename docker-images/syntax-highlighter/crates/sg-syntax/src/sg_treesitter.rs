@@ -356,6 +356,11 @@ pub fn dump_document(doc: Document, source: &str) -> String {
 
 #[cfg(test)]
 mod test {
+    use std::{
+        fs::{read_dir, File},
+        io::Read,
+    };
+
     use super::*;
 
     #[test]
@@ -403,6 +408,33 @@ SELECT * FROM my_table
         let src = "using System;";
         let document = index_language("c_sharp", src)?;
         insta::assert_snapshot!(dump_document(document, src));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_all_files() -> Result<(), std::io::Error> {
+        let dir = read_dir("./src/snapshots/files/")?;
+        for entry in dir.into_iter() {
+            let entry = entry?;
+            let filepath = entry.path();
+            let mut file = File::open(&filepath)?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+
+            let extension = filepath.extension().unwrap();
+            let filetype = match extension.to_str().unwrap() {
+                "go" => "go",
+                "cs" => "c_sharp",
+                _ => unreachable!(),
+            };
+
+            let document = index_language(filetype, &contents).unwrap();
+            insta::assert_snapshot!(
+                filepath.to_str().unwrap(),
+                dump_document(document, &contents)
+            );
+        }
 
         Ok(())
     }
