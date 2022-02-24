@@ -112,7 +112,7 @@ macro_rules! create_configurations {
 
 lazy_static::lazy_static! {
     static ref CONFIGURATIONS: HashMap<&'static str, HighlightConfiguration> = {
-        create_configurations!( go, sql )
+        create_configurations!( go, sql, c_sharp )
     };
 }
 
@@ -393,6 +393,15 @@ SELECT * FROM my_table
 "#;
 
         let document = index_language("go", src)?;
+        insta::assert_snapshot!(dump_document(document, src));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_highlight_csharp_file() -> Result<(), Error> {
+        let src = "using System;";
+        let document = index_language("c_sharp", src)?;
         insta::assert_snapshot!(dump_document(document, src));
 
         Ok(())

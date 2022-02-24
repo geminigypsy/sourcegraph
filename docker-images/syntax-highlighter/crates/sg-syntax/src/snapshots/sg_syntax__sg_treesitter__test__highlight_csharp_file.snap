@@ -1,0 +1,9 @@
+---
+source: crates/sg-syntax/src/sg_treesitter.rs
+assertion_line: 405
+expression: "dump_document(document, src)"
+
+---
+  using System;
+//      ^^^^^^ Identifier
+
