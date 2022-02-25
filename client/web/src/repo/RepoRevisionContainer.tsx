@@ -31,7 +31,13 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import { GlobalCoolCodeIntelProps } from '../global/CoolCodeIntel'
+import {
+    CoolClickedToken,
+    CoolCodeIntel,
+    GlobalCoolCodeIntelProps,
+    isCoolCodeIntelEnabled,
+    locationWithoutViewState,
+} from '../global/CoolCodeIntel'
 import { RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { SearchStreamingProps } from '../search'
@@ -109,8 +115,7 @@ interface RepoRevisionContainerProps
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
-        ExtensionAlertProps,
-        GlobalCoolCodeIntelProps {
+        ExtensionAlertProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -209,6 +214,14 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
     useBreadcrumb,
     ...props
 }) => {
+    // Experimental reference panel
+    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
+    const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
+        props.history.push(locationWithoutViewState(context.location))
+        onTokenClick(token)
+    }
+    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(props.settingsCascade)
+
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
             if (!props.resolvedRevisionOrError || isErrorLike(props.resolvedRevisionOrError)) {
@@ -278,50 +291,69 @@ export const RepoRevisionContainer: React.FunctionComponent<RepoRevisionContaine
         ...props,
         ...breadcrumbSetters,
         resolvedRev: props.resolvedRevisionOrError,
+        onTokenClick: onTokenClickRemoveViewState,
+        coolCodeIntelEnabled,
     }
 
     const resolvedRevisionOrError = props.resolvedRevisionOrError
 
     return (
-        <RepoRevisionWrapper className="pl-3">
-            <Switch>
-                {props.routes.map(
-                    ({ path, render, exact, condition = () => true }) =>
-                        condition(context) && (
-                            <Route
-                                path={props.routePrefix + path}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                )}
-            </Switch>
-            <RepoHeaderContributionPortal
-                position="left"
-                id="copy-path"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {() => <CopyPathAction key="copy-path" />}
-            </RepoHeaderContributionPortal>
-            <RepoHeaderContributionPortal
-                position="right"
-                priority={3}
-                id="go-to-permalink"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {context => (
-                    <GoToPermalinkAction
-                        key="go-to-permalink"
-                        telemetryService={props.telemetryService}
-                        revision={props.revision}
-                        commitID={resolvedRevisionOrError.commitID}
-                        location={props.location}
-                        history={props.history}
-                        {...context}
-                    />
-                )}
-            </RepoHeaderContributionPortal>
-        </RepoRevisionWrapper>
+        <>
+            <RepoRevisionWrapper className="pl-3">
+                <Switch>
+                    {props.routes.map(
+                        ({ path, render, exact, condition = () => true }) =>
+                            condition(context) && (
+                                <Route
+                                    path={props.routePrefix + path}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    exact={exact}
+                                    render={routeComponentProps =>
+                                        render({
+                                            ...context,
+                                            ...routeComponentProps,
+                                        })
+                                    }
+                                />
+                            )
+                    )}
+                </Switch>
+                <RepoHeaderContributionPortal
+                    position="left"
+                    id="copy-path"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {() => <CopyPathAction key="copy-path" />}
+                </RepoHeaderContributionPortal>
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={3}
+                    id="go-to-permalink"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {context => (
+                        <GoToPermalinkAction
+                            key="go-to-permalink"
+                            telemetryService={props.telemetryService}
+                            revision={props.revision}
+                            commitID={resolvedRevisionOrError.commitID}
+                            location={props.location}
+                            history={props.history}
+                            {...context}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            </RepoRevisionWrapper>
+            {coolCodeIntelEnabled && (
+                <CoolCodeIntel
+                    {...props}
+                    onClose={() => {
+                        onTokenClick(undefined)
+                    }}
+                    onTokenClick={onTokenClick}
+                    clickedToken={clickedToken}
+                />
+            )}
+        </>
     )
 }

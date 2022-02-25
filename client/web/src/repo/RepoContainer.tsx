@@ -449,9 +449,6 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                                     // must exactly match how the revision was encoded in the URL
                                     routePrefix={`${repoMatchURL}${rawRevision ? `@${rawRevision}` : ''}`}
                                     useActionItemsBar={useActionItemsBar}
-                                    // Experimental ref panel
-                                    coolCodeIntelEnabled={props.coolCodeIntelEnabled}
-                                    onTokenClick={props.onTokenClick}
                                 />
                             )}
                         />

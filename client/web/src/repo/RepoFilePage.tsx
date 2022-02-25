@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
 import { appendLineRangeQueryParameter, isErrorLike } from '@sourcegraph/common'
@@ -8,12 +8,6 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { FeatureFlagProps } from '../featureFlags/featureFlags'
-import {
-    CoolClickedToken,
-    CoolCodeIntel,
-    isCoolCodeIntelEnabled,
-    locationWithoutViewState,
-} from '../global/CoolCodeIntel'
 import { OnboardingTourInfo } from '../onboarding-tour/OnboardingTourInfo'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
@@ -43,20 +37,6 @@ export const RepoFilePage: React.FunctionComponent<Props> = ({
     onExtensionAlertDismissed,
     ...context
 }) => {
-    // Experimental reference panel
-    const [clickedToken, onTokenClick] = useState<CoolClickedToken>()
-    useEffect(() => {
-        if (match.params.objectType !== 'blob') {
-            onTokenClick(undefined)
-        }
-    }, [onTokenClick, match.params.objectType])
-
-    const onTokenClickRemoveViewState = (token: CoolClickedToken): void => {
-        context.history.push(locationWithoutViewState(context.location))
-        onTokenClick(token)
-    }
-    const coolCodeIntelEnabled = isCoolCodeIntelEnabled(context.settingsCascade)
-
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
     // and https://github.com/ReactTraining/history/issues/505
@@ -114,70 +94,55 @@ export const RepoFilePage: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            <div>
-                <RepoRevisionSidebar
-                    {...context}
-                    {...repoRevisionProps}
-                    repoID={repo.id}
-                    repoName={repo.name}
-                    className="repo-revision-container__sidebar"
-                    isDir={objectType === 'tree'}
-                    defaultBranch={defaultBranch || 'HEAD'}
-                    showOnboardingTour={showOnboardingTour}
-                />
-                {!hideRepoRevisionContent && (
-                    // Add `.blob-status-bar__container` because this is the
-                    // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
-                    <BlobStatusBarContainer>
-                        {showOnboardingTour && <OnboardingTourInfo className="mr-3 mb-3" />}
-                        <ErrorBoundary location={context.location}>
-                            {objectType === 'blob' ? (
-                                <>
-                                    <InstallIntegrationsAlert
-                                        codeHostIntegrationMessaging={codeHostIntegrationMessaging}
-                                        page="file"
-                                        externalURLs={repo.externalURLs}
-                                        onExtensionAlertDismissed={onExtensionAlertDismissed}
-                                    />
-                                    <BlobPage
-                                        {...context}
-                                        {...repoRevisionProps}
-                                        repoID={repo.id}
-                                        repoName={repo.name}
-                                        repoUrl={repo.url}
-                                        mode={mode}
-                                        repoHeaderContributionsLifecycleProps={
-                                            context.repoHeaderContributionsLifecycleProps
-                                        }
-                                        coolCodeIntelEnabled={coolCodeIntelEnabled}
-                                        onTokenClick={onTokenClickRemoveViewState}
-                                    />
-                                </>
-                            ) : (
-                                <TreePage {...context} {...repoRevisionProps} repo={repo} />
-                            )}
-                        </ErrorBoundary>
-                    </BlobStatusBarContainer>
-                )}
-                <ActionItemsBar
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    telemetryService={context.telemetryService}
-                />
-            </div>
-            {false && objectType === 'blob' && (
-                <CoolCodeIntel
-                    {...context}
-                    {...repoRevisionProps}
-                    onClose={() => {
-                        onTokenClick(undefined)
-                    }}
-                    onTokenClick={onTokenClick}
-                    clickedToken={clickedToken}
-                />
+            <RepoRevisionSidebar
+                {...context}
+                {...repoRevisionProps}
+                repoID={repo.id}
+                repoName={repo.name}
+                className="repo-revision-container__sidebar"
+                isDir={objectType === 'tree'}
+                defaultBranch={defaultBranch || 'HEAD'}
+                showOnboardingTour={showOnboardingTour}
+            />
+            {!hideRepoRevisionContent && (
+                // Add `.blob-status-bar__container` because this is the
+                // lowest common ancestor of Blob and the absolutely-positioned Blob status bar
+                <BlobStatusBarContainer>
+                    {showOnboardingTour && <OnboardingTourInfo className="mr-3 mb-3" />}
+                    <ErrorBoundary location={context.location}>
+                        {objectType === 'blob' ? (
+                            <>
+                                <InstallIntegrationsAlert
+                                    codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                                    page="file"
+                                    externalURLs={repo.externalURLs}
+                                    onExtensionAlertDismissed={onExtensionAlertDismissed}
+                                />
+                                <BlobPage
+                                    {...context}
+                                    {...repoRevisionProps}
+                                    repoID={repo.id}
+                                    repoName={repo.name}
+                                    repoUrl={repo.url}
+                                    mode={mode}
+                                    repoHeaderContributionsLifecycleProps={
+                                        context.repoHeaderContributionsLifecycleProps
+                                    }
+                                />
+                            </>
+                        ) : (
+                            <TreePage {...context} {...repoRevisionProps} repo={repo} />
+                        )}
+                    </ErrorBoundary>
+                </BlobStatusBarContainer>
             )}
+            <ActionItemsBar
+                useActionItemsBar={context.useActionItemsBar}
+                location={context.location}
+                extensionsController={context.extensionsController}
+                platformContext={context.platformContext}
+                telemetryService={context.telemetryService}
+            />
         </>
     )
 }
