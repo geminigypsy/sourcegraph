@@ -211,9 +211,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         ...breadcrumbProps,
         onExtensionAlertDismissed,
         isMacPlatform: isMacPlatform(),
-        // Experimental reference panel
-        coolCodeIntelEnabled,
-        onTokenClick: undefined,
     }
 
     return (
