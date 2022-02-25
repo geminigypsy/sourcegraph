@@ -313,6 +313,9 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
         )
     }
 
+    console.log('blobpage. on token click', props.onTokenClick)
+    console.log('blobpage. enabled', props.coolCodeIntelEnabled)
+
     return (
         <>
             {alwaysRender}
