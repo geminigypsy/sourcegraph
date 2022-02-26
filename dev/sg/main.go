@@ -159,6 +159,9 @@ func main() {
 
 	if err := rootCommand.Run(ctx); err != nil {
 		fmt.Printf("error: %s\n", err)
+		if *verboseFlag {
+			fmt.Printf("verbose err: %+v\n", errors.WithStack(err))
+		}
 		os.Exit(1)
 	}
 }
